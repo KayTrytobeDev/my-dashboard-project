@@ -8,10 +8,13 @@ st.set_page_config(page_title="Executive Dashboard", layout="wide", page_icon="�
 # 🎨 2. ใส่ Custom CSS ปรับแต่งหน้าตาให้สวยงามตามแบบ Figma (Fonts, Cards, และ Colors)
 st.markdown("""
     <style>
+        /* ปรับฟอนต์และพื้นหลังให้ดูสบายตาแบบมินิมอล */
         @import url('https://googleapis.com');
         html, body, [data-testid="stSidebar"] {
             font-family: 'Sarabun', sans-serif;
         }
+        
+        /* ปรับแต่งดีไซน์ของการ์ดสรุปตัวเลข (KPI Cards) */
         .kpi-card {
             background-color: #ffffff;
             padding: 20px;
@@ -31,6 +34,8 @@ st.markdown("""
             font-size: 28px;
             font-weight: bold;
         }
+        
+        /* ปรับแต่งแถบเมนูด้านซ้าย (Sidebar) ให้ดูโมเดิร์น */
         [data-testid="stSidebar"] {
             background-color: #F9FAFB;
             border-right: 1px solid #E5E7EB;
@@ -38,7 +43,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. เชื่อมต่อฐานข้อมูล Google Sheet มาสเตอร์ไฟล์โดยใช้ลิงก์ตรงตัว
+# 3. เชื่อมต่อฐานข้อมูล Google Sheet มาสเตอร์ไฟล์โดยใช้ลิงก์ Export CSV มาตรฐาน (แก้ปัญหาแกนกราฟเพี้ยนอ่านไม่ออก)
 url = "https://google.com"
 
 @st.cache_data(ttl=1) # บังคับล้างข้อมูลเก่าทันทีทุก 1 วินาที
@@ -47,6 +52,8 @@ def load_data():
         # ดึงข้อมูลจากไฟล์มาสเตอร์โดยตรง
         data = pd.read_csv(url)
         data.dropna(how='all', inplace=True) # ลบแถวว่างทิ้งถ้ามี
+        # ปรับชื่อคอลัมน์ทั้งหมดเป็นตัวพิมพ์เล็กเพื่อความปลอดภัยในการคำนวณ
+        data.columns = data.columns.str.strip().str.lower()
         return data
     except Exception as e:
         st.error(f"ไม่สามารถเชื่อมต่อ Google Sheet ได้: {e}")
@@ -55,12 +62,11 @@ def load_data():
 df = load_data()
 
 if df is not None and not df.empty:
-    # 🛠️ วิธีแก้ถาวร: บังคับให้คอลัมน์แรกสุด (Index 0) ของ Google Sheet ทำหน้าที่เป็นแกนเวลา/เดือน ทันที!
-    # ไม่ว่าหัวข้อจะพิมพ์ว่า Month, month, เดือน หรือปล่อยว่างไว้ก็ตาม ระบบจะทำงานได้ 100%
-    col_month = df.columns[0]
+    # กำหนดให้คอลัมน์แรกสุด 'month' ทำหน้าที่เป็นแกนเวลา
+    col_month = 'month'
     
-    # ดึงคอลัมน์แผนกที่เหลือทั้งหมด (ตั้งแต่คอลัมน์ที่ 2 เป็นต้นไป)
-    departments = [col for col in df.columns if col != col_month and not col.startswith('Unnamed')]
+    # ดึงคอลัมน์แผนกที่เหลือทั้งหมด (engineering, sales, marketing, hr, operations)
+    departments = [col for col in df.columns if col != col_month and not col.startswith('unnamed')]
     
     try:
         # แปลงโครงสร้างข้อมูลตารางจากหน้ากว้างให้กลายเป็นแกนพล็อตกราฟแนวตั้ง (Wide to Long)
@@ -70,9 +76,13 @@ if df is not None and not df.empty:
         # คัดกรองแปลงตัวเลขเพื่อป้องกันค่า Error
         df_melted['ผลงาน/ยอดขาย (Value)'] = pd.to_numeric(df_melted['ผลงาน/ยอดขาย (Value)'], errors='coerce').fillna(0)
         
+        # จัดรูปแบบตัวอักษรชื่อเดือนและแผนกให้เป็นพิมพ์ใหญ่ตัวแรกให้อ่านง่ายและสวยงาม
+        df_melted['month'] = df_melted['month'].astype(str).str.capitalize()
+        df_melted['แผนก (Department)'] = df_melted['แผนก (Department)'].astype(str).str.capitalize()
+        
         # 🛠️ 4. จัดวางโครงสร้างเมนูด้านข้าง (Sidebar Filters)
         st.sidebar.markdown("### 🛠️ ตัวกรองข้อมูล (Filters)")
-        available_months = df[col_month].dropna().unique().tolist()
+        available_months = sorted(df_melted[col_month].dropna().unique().tolist())
         
         filter_mode = st.sidebar.radio("รูปแบบการดูข้อมูล:", ["เปรียบเทียบทุกเดือน", "กรองดูเฉพาะเดือน"])
         
@@ -147,7 +157,10 @@ if df is not None and not df.empty:
         # 📋 ส่วนที่ 3: ตารางข้อมูลดิบด้านล่างสุด
         st.markdown("<br>", unsafe_allow_html=True)
         with st.expander("📋 คลิกเพื่อตรวจสอบตารางข้อมูลดิบจาก Google Sheet (Real-time Table)"):
-            st.dataframe(df, use_container_width=True)
+            # แสดงชื่อหัวตารางจริงให้สวยงามอ่านง่ายขึ้นก่อนแสดงในเว็บ
+            df_display = df.copy()
+            df_display.columns = df_display.columns.str.capitalize()
+            st.dataframe(df_display, use_container_width=True)
             
     except Exception as ex:
         st.error(f"เกิดข้อผิดพลาดในการประมวลผลโครงสร้างตารางข้อมูล: {ex}")
