@@ -136,4 +136,27 @@ if df is not None and not df.empty:
             paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(l=10, r=15, t=10, b=10),
             font=dict(family='Sarabun', size=12, color='#F8FAFC'),
-            height=
+            height=dynamic_height,  
+            
+            # ย้ายคำอธิบายเดือนไปไว้ด้านล่างสุดของหน้าจอ เพื่อให้หน้าจอกว้างเต็มที่
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.15,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=11),
+                title=None
+            )
+        )
+        
+        fig.update_xaxes(showgrid=True, gridcolor='#334151', tickfont=dict(color='#94A3B8'))
+        fig.update_yaxes(tickfont=dict(color='#F8FAFC'), categoryorder='total ascending') 
+        
+        # แสดงผลกราฟ
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            
+    except Exception as ex:
+        st.error(f"เกิดข้อผิดพลาดในการประมวลผลตารางข้อมูล: {ex}")
+else:
+    st.info("💡 คำแนะนำ: ไม่พบข้อมูลในแผ่นงาน หรือโปรดตรวจสอบว่าใส่ลิงก์ Google Sheet ถูกต้องแล้ว")
