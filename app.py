@@ -42,7 +42,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🔗 3. ลิงก์จาก Google Sheet (พ่นข้อมูลออกมาเป็น CSV อัตโนมัติ)
-url = "https://docs.google.com/spreadsheets/d/14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o/edit?gid=0#gid=0"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณที่นี่
+url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTeRQBZil1P--FNOmDZYT1sKePSfWgjynp9VvVY-ttHHJ93UkHxHPbf0iG0196eZ587WmOdz70QDMST/pubhtml"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณที่นี่
 
 @st.cache_data(ttl=1) 
 def load_data():
