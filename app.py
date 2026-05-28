@@ -68,13 +68,13 @@ if df is not None and not df.empty:
         df_melted['Value'] = pd.to_numeric(df_melted['Value'], errors='coerce').fillna(0)
         
         # ส่วนหัวแดชบอร์ด
-        st.title("📊 ระบบเปรียบเทียบข้อมูลอัจฉริยะ (Universal Dashboard)")
+        st.title("📊 สรุปรายงานข้อมูลยอดของแผนก ")
         st.markdown("---")
         
         # 🛠️ 4. โหมดควบคุมแถวบนสุด: เลือกมุมมองกราฟที่เหมาะกับการตัดสินใจ
         chart_type = st.radio(
             "📈 เลือกรูปแบบการเปรียบเทียบข้อมูลที่ต้องการดู:",
-            ["ดูอันดับความสูง-ต่ำ (แท่งแนวนอน)", "ดูแนวโน้มการเติบโตรายเดือน (กราฟเส้น)", "ดูสัดส่วนและยอดรวมบริษัท (แท่งสะสม)"],
+            ["ดูอันดับความสูง-ต่ำ (แท่งแนวนอน)", "ดูแนวโน้มการเติบโตรายเดือน (กราฟเส้น)", "ดูสัดส่วนและยอดรวม(แท่งสะสม)"],
             horizontal=True
         )
         
@@ -143,7 +143,7 @@ if df is not None and not df.empty:
             )
             fig.update_traces(line=dict(width=3), marker=dict(size=8))
             
-        else: # ดูสัดส่วนและยอดรวมบริษัท (แท่งสะสม)
+        else: # ดูสัดส่วนและยอดรวม (แท่งสะสม)
             dynamic_height = 500
             fig = px.bar(
                 filtered_df, x=col_month, y='Value', color='Department',
