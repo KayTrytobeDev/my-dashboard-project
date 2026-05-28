@@ -122,16 +122,23 @@ if df is not None and not df.empty:
         # 📈 5. ส่วนสร้างการพล็อตกราฟแบบ Dynamic เปลี่ยนร่างตามปุ่มที่เลือกด้านบน
         modern_colors = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#06B6D4', '#A855F7', '#EC4899', '#38BDF8', '#F472B6']
         
-        if chart_type == "ดูอันดับความสูง-ต่ำ (แท่งแนวนอน)":
-            # กราฟแท่งแนวนอน ความสูงแปรผันตามจำนวนแผนกที่เลือก
-            dynamic_height = max(450, len(selected_depts) * len(selected_months) * 35)
-            fig = px.bar(
-                filtered_df, x='Value', y='Department', color=col_month,
-                barmode="group", color_discrete_sequence=modern_colors,
-                labels={col_month: 'เดือน', 'Department': 'แผนก', 'Value': 'จำนวน'},
-                text_auto='.0f', template="plotly_dark", orientation='h'
-            )
-            fig.update_yaxes(categoryorder='total ascending') # เรียงจากน้อยไปมาก (ยอดเยอะสุดจะอยู่บนสุด เด่นชัด)
+       if chart_type == "ดูอันดับความสูง-ต่ำ (แท่งแนวนอน)":
+    # คำนวณความสูงของกราฟให้ขยายตามจำนวนแผนกที่เลือก
+    dynamic_height = max(450, len(selected_depts) * 45) # 💡 ปรับสูตรความสูงให้กระชับขึ้น
+    
+    fig = px.bar(
+        filtered_df, 
+        x='Value',       # 📊 แกน X เป็น "จำนวนตัวเลข" (ความยาวแท่ง)
+        y='Department',  # 🏢 แกน Y ต้องเป็น "Department" เพื่อให้ยอมแยกชื่อแผนกแต่ละบรรทัด!
+        color=col_month,
+        barmode="group", 
+        color_discrete_sequence=modern_colors,
+        labels={col_month: 'เดือน', 'Department': 'แผนก', 'Value': 'จำนวน'},
+        text_auto='.0f', 
+        template="plotly_dark", 
+        orientation='h'
+    )
+    fig.update_yaxes(categoryorder='total ascending') # เรียงลำดับเอาแผนกยอดสูงสุดไว้บนสุด
             
         elif chart_type == "ดูแนวโน้มการเติบโตรายเดือน (กราฟเส้น)":
             dynamic_height = 500
