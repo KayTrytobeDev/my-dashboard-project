@@ -43,10 +43,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. เชื่อมต่อฐานข้อมูล Google Sheet มาสเตอร์ไฟล์
-SHEET_ID = "14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o"
-SHEET_NAME = "Sheet1"  
-url = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+# 3. เชื่อมต่อฐานข้อมูล Google Sheet มาสเตอร์ไฟล์โดยใช้ลิงก์ตรงตัว (ป้องกันปัญหา Errno -2 ยอดฮิต)
+url = "https://google.com"
 
 @st.cache_data(ttl=5)
 def load_data():
