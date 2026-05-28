@@ -52,7 +52,7 @@ def load_data():
         # ดึงข้อมูลจากไฟล์มาสเตอร์โดยตรง
         data = pd.read_csv(url)
         data.dropna(how='all', inplace=True) # ลบแถวว่างทิ้งถ้ามี
-        # ลบช่องว่างส่วนเกินที่ชื่อคอลลัมน์ออกอย่างเดียว ไม่แปลงตัวเล็กใหญ่ป้องกันระบบรวน
+        # ลบช่องว่างส่วนเกินที่ชื่อคอลลัมน์ออกอย่างเดียว
         data.columns = data.columns.str.strip()
         return data
     except Exception as e:
@@ -62,13 +62,25 @@ def load_data():
 df = load_data()
 
 if df is not None and not df.empty:
-    # 🛠️ วิธีแก้ปัญหาถาวร: บังคับคอลัมน์แรกสุดใน Google Sheet เป็นแกนเวลาออโต้! (หมดปัญหาเรื่องตัวพิมพ์เล็ก/ใหญ่)
+    # บังคับคอลัมน์แรกสุดใน Google Sheet เป็นแกนเวลาออโต้
     col_month = df.columns[0]
     
     # ดึงคอลัมน์แผนกที่เหลือทั้งหมดโดยอิงจากตำแหน่งที่ 2 เป็นต้นไป
     departments = [col for col in df.columns if col != col_month and not col.startswith('Unnamed')]
     
     try:
+        # 🛠️ ขั้นตอนคัดกรองขยะพิเศษ: ล้างแถวในคอลัมน์เดือนที่ติดรหัสสคริปต์โปรแกรมทิ้งไปอัตโนมัติ
+        # ระบบจะลบแถวที่เริ่มด้วยคำว่า var, function, try, html หรือสัญลักษณ์ขยะโปรแกรมทิ้งทั้งหมด
+        df[col_month] = df[col_month].astype(str).str.strip()
+        noise_keywords = ['var ', 'function', 'try {', 'document.', 'spdx-', 'copyright', 'closure', 'html']
+        
+        # ครองเอาไว้เฉพาะแถวที่ไม่ได้มีคำศัพท์ขยะเหล่านี้ปนอยู่
+        for keyword in noise_keywords:
+            df = df[~df[col_month].str.contains(keyword, case=False, na=False)]
+            
+        # ลบแถวเพิ่มเติมหากมีความยาวตัวอักษรมากเกินไปจนผิดสังเกต (ชื่อเดือนปกติไม่ควรเกิน 20 ตัวอักษร)
+        df = df[df[col_month].str.len() < 25]
+
         # แปลงโครงสร้างข้อมูลตารางจากหน้ากว้างให้กลายเป็นแกนพล็อตกราฟแนวตั้ง (Wide to Long)
         df_melted = pd.melt(df, id_vars=[col_month], value_vars=departments, 
                             var_name='แผนก (Department)', value_name='ผลงาน/ยอดขาย (Value)')
@@ -95,7 +107,7 @@ if df is not None and not df.empty:
             
         # 🌟 5. หน้าจอหลัก (Main Content Dashboard)
         st.markdown("<h2 style='font-weight: 600; color: #111827; margin-bottom: 0px;'>📊 แดชบอร์ดวิเคราะห์ข้อมูลรายแผนก และ รายเดือน</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #6B7280; font-size: 14px;'>ข้อมูลเชื่อมโยงแบบเรียลไทม์จากระบบ Google Sheet Master File</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #6B7280; font-size: 14px;'>ข้อมูลเชื่อมโยน์แบบเรียลไทม์จากระบบ Google Sheet Master File</p>", unsafe_allow_html=True)
         st.markdown("<hr style='margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
 
         # 📈 ส่วนที่ 1: การ์ดสรุปผลงานระดับบริหาร (KPI Cards)
@@ -163,4 +175,3 @@ if df is not None and not df.empty:
         st.error(f"เกิดข้อผิดพลาดในการประมวลผลโครงสร้างตารางข้อมูล: {ex}")
 else:
     st.info("💡 คำแนะนำ: ไม่พบข้อมูลในแผ่นงาน หรือโปรดตรวจสอบสิทธิ์การแชร์ของ Google Sheet อีกครั้ง")
-
