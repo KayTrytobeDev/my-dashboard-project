@@ -12,7 +12,7 @@ SHEET_ID = "14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o"
 SHEET_NAME = "Sheet1"  
 # =========================================================
 
-url = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+url = f"https://google.com{14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o}/gviz/tq?tqx=out:csv&sheet={Sheet1}"
 
 @st.cache_data(ttl=10)
 def load_data():
