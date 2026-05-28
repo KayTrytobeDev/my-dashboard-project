@@ -68,7 +68,7 @@ if df is not None and not df.empty:
         df_melted['Value'] = pd.to_numeric(df_melted['Value'], errors='coerce').fillna(0)
         
         # ส่วนหัวแดชบอร์ด
-        st.title("📊 แดชบอร์ดวิเคราะห์ข้อมูลสากล")
+        st.title("📊 แดชบอร์ดวิเคราะห์ข้อมูลสากล (รองรับทุกอุปกรณ์)")
         st.markdown("---")
         
         # 🛠️ 4. ตัวช่วยจัดการ 40 แผนก (แก้ปัญหาการคลิกเลือกยากบนมือถือ)
@@ -114,20 +114,20 @@ if df is not None and not df.empty:
         # 📈 5. พล็อตกราฟแท่งแนวนอน (Horizontal Bar Chart) เพื่อความสมบูรณ์แบบบนมือถือ
         modern_colors = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#06B6D4', '#A855F7', '#EC4899']
         
-        # คำนวณความสูงของกราฟแปรผันตามจำนวนแผนกที่เลือก (ถ้าเลือกเยอะ กราฟจะยาวลงล่างตามตัว ทำให้ไม่เบียดกัน)
+        # คำนวณความสูงของกราฟแปรผันตามจำนวนแผนกที่เลือก
         dynamic_height = max(400, len(selected_depts) * len(selected_months) * 35)
         
         fig = px.bar(
             filtered_df,
-            x='Value',            # 💡 สลับเอาตัวเลขมาไว้แกน X
-            y='Department',       # 💡 สลับเอาชื่อแผนกไปไว้แกน Y (ทำให้ยาวลงข้างล่าง ไม่บีบด้านข้าง)
+            x='Value',            
+            y='Department',       
             color=col_month,
-            barmode="group",      # แสดงแท่งเปรียบเทียบแต่ละเดือนคู่กันชัดๆ
+            barmode="group",      
             color_discrete_sequence=modern_colors,
             labels={col_month: 'เดือน', 'Department': 'แผนก', 'Value': 'จำนวน'},
             text_auto='.0f',
             template="plotly_dark",
-            orientation='h'       # 💡 บังคับเปิดใช้งานกราฟแนวนอน
+            orientation='h'       
         )
         
         # ปรับการจัดตำแหน่งของ Layout ให้แสดงได้ดีบน PC, Tablet, Mobile
@@ -136,32 +136,4 @@ if df is not None and not df.empty:
             paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(l=10, r=15, t=10, b=10),
             font=dict(family='Sarabun', size=12, color='#F8FAFC'),
-            height=dynamic_height,  # ใช้ความสูงแบบ Dynamic
-            
-            # ย้ายคำอธิบายเดือนไปไว้ด้านล่างสุดของหน้าจอ เพื่อให้หน้าจอกว้างเต็มที่
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=-0.15,
-                xanchor="center",
-                x=0.5,
-                font=dict(size=11),
-                title=None
-            )
-        )
-        
-        fig.update_xaxes(showgrid=True, gridcolor='#334151', tickfont=dict(color='#94A3B8'))
-        fig.update_yaxes(tickfont=dict(color='#F8FAFC'), categoryorder='total ascending') # เรียงจากแผนกที่ยอดเยอะที่สุดขึ้นไป
-        
-        # แสดงผลกราฟ
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-        
-        # 📋 6. ส่วนตรวจสอบตารางข้อมูลดิบ
-        st.markdown("---")
-        with st.expander("📋 แตะ/คลิก เพื่อเปิดดูตารางข้อมูลดิบทั้งหมดจาก Google Sheet"):
-            st.dataframe(df, use_container_width=True)
-            
-    except Exception as ex:
-        st.error(f"เกิดข้อผิดพลาดในการประมวลผลตารางข้อมูล: {ex}")
-else:
-    st.info("💡 คำแนะนำ: ไม่พบข้อมูลในแผ่นงาน หรือโปรดตรวจสอบว่าใส่ลิงก์ Google Sheet ถูกต้องแล้ว")
+            height=
