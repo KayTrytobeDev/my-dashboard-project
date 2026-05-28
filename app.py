@@ -24,9 +24,11 @@ def load_data():
 df = load_data()
 
 if df is not None and not df.empty:
-    # ระบุชื่อคอลัมน์ตรงตามไฟล์ข้อมูลดิบของคุณเป๊ะๆ
-    col_month = 'month'
-    departments = ['engineering', 'sales', 'marketing', 'hr', 'operations', 'it']
+    # 🛠️ แก้ไขจุดสำคัญ: ดึงชื่อคอลัมน์แรกสุดมาทำเป็นแกนเดือนอัตโนมัติ ไม่ว่าใน Sheet จะตั้งชื่อว่าอะไร
+    col_month = df.columns[0]
+    
+    # 🛠️ ดึงชื่อคอลัมน์แผนกที่เหลือทั้งหมดที่มีใน Google Sheet ของคุณมาใช้โดยอัตโนมัติ
+    departments = [col for col in df.columns if col != col_month and not col.startswith('Unnamed')]
     
     try:
         # แปลงโครงสร้างข้อมูลตารางดิบให้เป็นแนวตั้งเพื่อเตรียมพล็อตกราฟ (Wide to Long)
@@ -50,7 +52,6 @@ if df is not None and not df.empty:
         filtered_df = df_melted[df_melted[col_month].isin(selected_months)]
         
         # 📈 พล็อตกราฟแท่งแบบกลุ่มเปรียบเทียบ (Grouped Bar Chart)
-        # ใช้โทนสีสว่างคมชัดตัดกับพื้นหลังมืด (Dark Theme)
         modern_colors = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#06B6D4', '#A855F7', '#EC4899']
         
         fig = px.bar(
@@ -86,3 +87,4 @@ if df is not None and not df.empty:
         st.error(f"เกิดข้อผิดพลาดในการประมวลผลตารางข้อมูล: {ex}")
 else:
     st.info("💡 คำแนะนำ: ไม่พบข้อมูลในแผ่นงาน หรือโปรดตรวจสอบสิทธิ์การแชร์ของ Google Sheet อีกครั้ง")
+
