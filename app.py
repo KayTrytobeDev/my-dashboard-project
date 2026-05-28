@@ -79,9 +79,9 @@ if df is not None:
         filtered_df = df_melted.copy()
         
     # 🌟 5. หน้าจอหลัก (Main Content Dashboard)
-    st.markdown("<h2 style='font-weight: 600; color: #111827; margin-bottom: 0px;'>📊 แดชบอร์ดวิเคราะห์ข้อมูลรายแผนก และ รายเดือน</h2>", unsafe_type_html=True)
-    st.markdown("<p style='color: #6B7280; font-size: 14px;'>ข้อมูลเชื่อมโยงแบบเรียลไทม์จากระบบ Google Sheet Master File</p>", unsafe_type_html=True)
-    st.markdown("<hr style='margin-top: 10px; margin-bottom: 25px;'>", unsafe_type_html=True)
+    st.markdown("<h2 style='font-weight: 600; color: #111827; margin-bottom: 0px;'>📊 แดชบอร์ดวิเคราะห์ข้อมูลรายแผนก และ รายเดือน</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #6B7280; font-size: 14px;'>ข้อมูลเชื่อมโยงแบบเรียลไทม์จากระบบ Google Sheet Master File</p>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
 
     # 📈 ส่วนที่ 1: การ์ดสรุปผลงานระดับบริหาร (KPI Cards)
     kpi1, kpi2, kpi3 = st.columns(3)
@@ -111,7 +111,7 @@ if df is not None:
         """, unsafe_allow_html=True)
 
     # 📊 ส่วนที่ 2: การพล็อตกราฟเปรียบเทียบ (Charts Area)
-    st.markdown(f"<h4 style='font-weight: 600; color: #374151; margin-top: 15px;'>📈 กราฟแสดงผลในโหมด: {filter_mode}</h4>", unsafe_type_html=True)
+    st.markdown(f"<h4 style='font-weight: 600; color: #374151; margin-top: 15px;'>📈 กราฟแสดงผลในโหมด: {filter_mode}</h4>", unsafe_allow_html=True)
     
     modern_colors = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#3B82F6', '#8B5CF6']
     
@@ -139,7 +139,7 @@ if df is not None:
     st.plotly_chart(fig, use_container_width=True)
 
     # 📋 ส่วนที่ 3: ตารางข้อมูลดิบด้านล่างสุด
-    st.markdown("<br>", unsafe_type_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("📋 คลิกเพื่อตรวจสอบตารางข้อมูลดิบจาก Google Sheet (Real-time Table)"):
         st.dataframe(df, use_container_width=True)
 else:
