@@ -68,7 +68,7 @@ if df is not None and not df.empty:
         df_melted['Value'] = pd.to_numeric(df_melted['Value'], errors='coerce').fillna(0)
         
         # ส่วนหัวแดชบอร์ด
-        st.title("📊 สรุปรายงานข้อมูลยอดของแผนก ")
+        st.title("📊 สรุปรายงานยอดของแผนก ")
         st.markdown("---")
         
         # 🛠️ 4. โหมดควบคุมแถวบนสุด: เลือกมุมมองกราฟที่เหมาะกับการตัดสินใจ
