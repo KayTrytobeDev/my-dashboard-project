@@ -43,7 +43,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. เชื่อมต่อฐานข้อมูล Google Sheet มาสเตอร์ไฟล์โดยใช้ลิงก์ Export CSV มาตรฐาน (แก้ปัญหาแกนกราฟเพี้ยนอ่านไม่ออก)
+# 3. เชื่อมต่อฐานข้อมูล Google Sheet มาสเตอร์ไฟล์โดยใช้ลิงก์ Export CSV มาตรฐาน
 url = "https://google.com"
 
 @st.cache_data(ttl=1) # บังคับล้างข้อมูลเก่าทันทีทุก 1 วินาที
@@ -52,8 +52,8 @@ def load_data():
         # ดึงข้อมูลจากไฟล์มาสเตอร์โดยตรง
         data = pd.read_csv(url)
         data.dropna(how='all', inplace=True) # ลบแถวว่างทิ้งถ้ามี
-        # ปรับชื่อคอลัมน์ทั้งหมดเป็นตัวพิมพ์เล็กเพื่อความปลอดภัยในการคำนวณ
-        data.columns = data.columns.str.strip().str.lower()
+        # ลบช่องว่างส่วนเกินที่ชื่อคอลลัมน์ออกอย่างเดียว ไม่แปลงตัวเล็กใหญ่ป้องกันระบบรวน
+        data.columns = data.columns.str.strip()
         return data
     except Exception as e:
         st.error(f"ไม่สามารถเชื่อมต่อ Google Sheet ได้: {e}")
@@ -62,11 +62,11 @@ def load_data():
 df = load_data()
 
 if df is not None and not df.empty:
-    # กำหนดให้คอลัมน์แรกสุด 'month' ทำหน้าที่เป็นแกนเวลา
-    col_month = 'month'
+    # 🛠️ วิธีแก้ปัญหาถาวร: บังคับคอลัมน์แรกสุดใน Google Sheet เป็นแกนเวลาออโต้! (หมดปัญหาเรื่องตัวพิมพ์เล็ก/ใหญ่)
+    col_month = df.columns[0]
     
-    # ดึงคอลัมน์แผนกที่เหลือทั้งหมด (engineering, sales, marketing, hr, operations)
-    departments = [col for col in df.columns if col != col_month and not col.startswith('unnamed')]
+    # ดึงคอลัมน์แผนกที่เหลือทั้งหมดโดยอิงจากตำแหน่งที่ 2 เป็นต้นไป
+    departments = [col for col in df.columns if col != col_month and not col.startswith('Unnamed')]
     
     try:
         # แปลงโครงสร้างข้อมูลตารางจากหน้ากว้างให้กลายเป็นแกนพล็อตกราฟแนวตั้ง (Wide to Long)
@@ -76,8 +76,8 @@ if df is not None and not df.empty:
         # คัดกรองแปลงตัวเลขเพื่อป้องกันค่า Error
         df_melted['ผลงาน/ยอดขาย (Value)'] = pd.to_numeric(df_melted['ผลงาน/ยอดขาย (Value)'], errors='coerce').fillna(0)
         
-        # จัดรูปแบบตัวอักษรชื่อเดือนและแผนกให้เป็นพิมพ์ใหญ่ตัวแรกให้อ่านง่ายและสวยงาม
-        df_melted['month'] = df_melted['month'].astype(str).str.capitalize()
+        # จัดรูปแบบตัวอักษรให้อ่านง่ายและสวยงาม
+        df_melted[col_month] = df_melted[col_month].astype(str).str.capitalize()
         df_melted['แผนก (Department)'] = df_melted['แผนก (Department)'].astype(str).str.capitalize()
         
         # 🛠️ 4. จัดวางโครงสร้างเมนูด้านข้าง (Sidebar Filters)
@@ -128,7 +128,7 @@ if df is not None and not df.empty:
         # 📊 ส่วนที่ 2: การพล็อตกราฟเปรียบเทียบ (Charts Area)
         st.markdown(f"<h4 style='font-weight: 600; color: #374151; margin-top: 15px;'>📈 กราฟแสดงผลในโหมด: {filter_mode}</h4>", unsafe_allow_html=True)
         
-        # ปรับชุดสีโมเดิร์นแบบงานดีไซน์ Figma
+        # ชุดสีโมเดิร์นแบบงานดีไซน์ Figma
         modern_colors = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#3B82F6', '#8B5CF6']
         
         fig = px.bar(
@@ -157,12 +157,10 @@ if df is not None and not df.empty:
         # 📋 ส่วนที่ 3: ตารางข้อมูลดิบด้านล่างสุด
         st.markdown("<br>", unsafe_allow_html=True)
         with st.expander("📋 คลิกเพื่อตรวจสอบตารางข้อมูลดิบจาก Google Sheet (Real-time Table)"):
-            # แสดงชื่อหัวตารางจริงให้สวยงามอ่านง่ายขึ้นก่อนแสดงในเว็บ
-            df_display = df.copy()
-            df_display.columns = df_display.columns.str.capitalize()
-            st.dataframe(df_display, use_container_width=True)
+            st.dataframe(df, use_container_width=True)
             
     except Exception as ex:
         st.error(f"เกิดข้อผิดพลาดในการประมวลผลโครงสร้างตารางข้อมูล: {ex}")
 else:
     st.info("💡 คำแนะนำ: ไม่พบข้อมูลในแผ่นงาน หรือโปรดตรวจสอบสิทธิ์การแชร์ของ Google Sheet อีกครั้ง")
+
