@@ -2,45 +2,47 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. ตั้งค่าหน้าต่างเบราว์เซอร์ให้เป็นแบบ Wide โทนมืดตั้งต้น
+# 1. ตั้งค่าหน้าต่างเบราว์เซอร์ให้ยืดหยุ่นแบบมืดตั้งต้น
 st.set_page_config(page_title="Executive Dashboard", layout="wide")
 
-# 🎨 2. ใส่ Custom CSS ปรับแต่งหน้าตาเป็น "โทนมืด" และปรับแต่งให้เหมาะกับจอมือถือ
+# 🎨 2. Custom CSS สไตล์พรีเมียม โทนมืด และรองรับ Responsive ทุกหน้าจอ
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap');
         
-        /* เปลี่ยนสีพื้นหลังหน้าหลักและฟอนต์เป็นโทนมืด */
         html, body, [data-testid="stAppViewContainer"] {
             background-color: #0F172A !important;
             color: #F8FAFC !important;
             font-family: 'Sarabun', sans-serif;
         }
         
-        /* ปรับขนาดตัวอักษรหัวข้อเรื่อง */
+        /* สไตล์หัวข้อหลัก */
         h1 {
-            font-size: 1.6rem !important;
+            font-size: 1.8rem !important;
             font-weight: 600;
-            margin-bottom: 5px;
+            color: #F8FAFC !important;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.4rem !important; }
         }
         
-        /* ปรับแต่งแต่งหน้าตาตัวกรอง (ฟอนต์สีขาวเด่นชัด) */
+        /* แต่งหน้าตาปุ่มวิเศษ (Radio Button ของตัวช่วยเลือก) */
+        div[data-testid="stRadio"] > label {
+            font-weight: bold;
+            color: #38BDF8 !important;
+        }
+        
         label {
             color: #F8FAFC !important;
-            font-size: 1rem !important;
             font-weight: 600;
         }
         
-        hr {
-            border-color: #334155 !important;
-            margin-top: 10px;
-            margin-bottom: 15px;
-        }
+        hr { border-color: #334155 !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# 🔗 3. ใส่ลิงก์ที่ได้จากปุ่ม "เผยแพร่ไปยังเว็บ" (Publish to web) ของคุณที่นี่
-url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTeRQBZil1P--FNOmDZYT1sKePSfWgjynp9VvVY-ttHHJ93UkHxHPbf0iG0196eZ587WmOdz70QDMST/pubhtml"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณ
+# 🔗 3. ลิงก์จาก Google Sheet (พ่นข้อมูลออกมาเป็น CSV อัตโนมัติ)
+url = "https://docs.google.com/spreadsheets/d/14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o/edit?gid=0#gid=0"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณที่นี่
 
 @st.cache_data(ttl=1) 
 def load_data():
@@ -65,30 +67,43 @@ if df is not None and not df.empty:
                             var_name='Department', value_name='Value')
         df_melted['Value'] = pd.to_numeric(df_melted['Value'], errors='coerce').fillna(0)
         
-        # หัวข้อหลักแบบกระชับ
-        st.title("📊 แดชบอร์ดรายแผนกและรายเดือน")
+        # ส่วนหัวแดชบอร์ด
+        st.title("📊 แดชบอร์ดวิเคราะห์ข้อมูลสากล (รองรับทุกอุปกรณ์)")
         st.markdown("---")
         
-        # 🛠 4. ย้ายตัวกรอง (Filters) มาอยู่บนหน้าหลัก ไม่ต้องซ่อนใน Sidebar อีกต่อไป
-        # แบ่งตัวกรองเป็น 2 คอลัมน์ซ้าย-ขวา เพื่อประหยัดพื้นที่แนวตั้งบนมือถือ
-        filter_col1, filter_col2 = st.columns(2)
+        # 🛠️ 4. ตัวช่วยจัดการ 40 แผนก (แก้ปัญหาการคลิกเลือกยากบนมือถือ)
+        st.markdown("### 🛠️ ตัวกรองข้อมูลความเร็วสูง")
         
-        with filter_col1:
+        # ตัวเลือกช่วยชีวิต: เลือกทั้งหมด หรือ ล้างทั้งหมดเพื่อเลือกเอง
+        select_mode = st.radio(
+            "💡 โหมดการเลือกแผนก:",
+            ["แสดงทุกแผนกพร้อมกัน (ทั้งหมด)", "เลือกติ๊กเฉพาะแผนกที่ต้องการดู"],
+            horizontal=True
+        )
+        
+        # แยกแถวตัวกรองให้กดง่ายขึ้นบน Tablet/Mobile
+        col_f1, col_f2 = st.columns([1, 1])
+        
+        with col_f1:
             all_months = df[col_month].dropna().astype(str).unique().tolist()
             selected_months = st.multiselect(
-                "📅 1. เลือกเดือน:", 
+                "📅 เลือกเดือนที่ต้องการดู:", 
                 options=all_months, 
                 default=all_months
             )
             
-        with filter_col2:
-            selected_depts = st.multiselect(
-                "🏢 2. เลือกแผนก:", 
-                options=departments, 
-                default=departments
-            )
-            
-        # ประมวลผลคัดกรองข้อมูล
+        with col_f2:
+            if select_mode == "แสดงทุกแผนกพร้อมกัน (ทั้งหมด)":
+                selected_depts = departments  # บังคับเลือก 40 แผนกอัตโนมัติ
+                st.info(f"✨ ระบบกำลังแสดงผลทั้งหมด {len(departments)} แผนก (สามารถสลับโหมดด้านบนเพื่อเลือกเฉพาะบางแผนกได้)")
+            else:
+                selected_depts = st.multiselect(
+                    "🏢 ติ๊กเลือกแผนก (พิมพ์ค้นหาได้):", 
+                    options=departments,
+                    default=departments[:3] # ค่าตั้งต้นโชว์แค่ 3 แผนกแรก ไม่ให้รกตา
+                )
+                
+        # ประมวลผลตัวกรอง
         filtered_df = df_melted[
             (df_melted[col_month].astype(str).isin(selected_months)) & 
             (df_melted['Department'].isin(selected_depts))
@@ -96,50 +111,54 @@ if df is not None and not df.empty:
         
         st.markdown("---")
         
-        # 📈 5. พล็อตกราฟแท่ง (ปรับจูนพิเศษเพื่อหน้าจอมือถือ)
+        # 📈 5. พล็อตกราฟแท่งแนวนอน (Horizontal Bar Chart) เพื่อความสมบูรณ์แบบบนมือถือ
         modern_colors = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#06B6D4', '#A855F7', '#EC4899']
+        
+        # คำนวณความสูงของกราฟแปรผันตามจำนวนแผนกที่เลือก (ถ้าเลือกเยอะ กราฟจะยาวลงล่างตามตัว ทำให้ไม่เบียดกัน)
+        dynamic_height = max(400, len(selected_depts) * len(selected_months) * 35)
         
         fig = px.bar(
             filtered_df,
-            x='Department',
-            y='Value',
+            x='Value',            # 💡 สลับเอาตัวเลขมาไว้แกน X
+            y='Department',       # 💡 สลับเอาชื่อแผนกไปไว้แกน Y (ทำให้ยาวลงข้างล่าง ไม่บีบด้านข้าง)
             color=col_month,
-            barmode="relative",  # แบบ Stacked สะสม เหมาะกับจอมือถือที่แคบ
+            barmode="group",      # แสดงแท่งเปรียบเทียบแต่ละเดือนคู่กันชัดๆ
             color_discrete_sequence=modern_colors,
             labels={col_month: 'เดือน', 'Department': 'แผนก', 'Value': 'จำนวน'},
             text_auto='.0f',
-            template="plotly_dark"
+            template="plotly_dark",
+            orientation='h'       # 💡 บังคับเปิดใช้งานกราฟแนวนอน
         )
         
-        # ปรับ Layout ให้สมบูรณ์แบบบนสมาร์ทโฟน
+        # ปรับการจัดตำแหน่งของ Layout ให้แสดงได้ดีบน PC, Tablet, Mobile
         fig.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            xaxis_tickangle=-45,  # เอียงชื่อแผนกไม่ให้ทับกันบนจอเล็ก
-            margin=dict(l=10, r=10, t=10, b=10),
-            font=dict(family='Sarabun', size=11, color='#F8FAFC'),
+            margin=dict(l=10, r=15, t=10, b=10),
+            font=dict(family='Sarabun', size=12, color='#F8FAFC'),
+            height=dynamic_height,  # ใช้ความสูงแบบ Dynamic
             
-            # ย้ายคำอธิบายเดือนไปไว้ด้านล่างสุดของกราฟเพื่อเพิ่มพื้นที่แสดงผลกว้างๆ
+            # ย้ายคำอธิบายเดือนไปไว้ด้านล่างสุดของหน้าจอ เพื่อให้หน้าจอกว้างเต็มที่
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=-0.6,
+                y=-0.15,
                 xanchor="center",
                 x=0.5,
-                font=dict(size=10, color='#F8FAFC'),
+                font=dict(size=11),
                 title=None
             )
         )
         
-        fig.update_xaxes(tickfont=dict(color='#94A3B8'))
-        fig.update_yaxes(showgrid=True, gridcolor='#334151', tickfont=dict(color='#94A3B8'))
+        fig.update_xaxes(showgrid=True, gridcolor='#334151', tickfont=dict(color='#94A3B8'))
+        fig.update_yaxes(tickfont=dict(color='#F8FAFC'), categoryorder='total ascending') # เรียงจากแผนกที่ยอดเยอะที่สุดขึ้นไป
         
-        # แสดงผลกราฟหน้าหลัก (ซ่อนแถบเครื่องมือเครื่องไม้ของ Plotly เพื่อความสะอาดตาบนมือถือ)
+        # แสดงผลกราฟ
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         
-        # 📋 6. ส่วนตรวจสอบตารางข้อมูลดิบด้านล่างสุด
+        # 📋 6. ส่วนตรวจสอบตารางข้อมูลดิบ
         st.markdown("---")
-        with st.expander("📋 แตะเพื่อดูตารางข้อมูลดิบจาก Google Sheet"):
+        with st.expander("📋 แตะ/คลิก เพื่อเปิดดูตารางข้อมูลดิบทั้งหมดจาก Google Sheet"):
             st.dataframe(df, use_container_width=True)
             
     except Exception as ex:
