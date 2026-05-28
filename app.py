@@ -41,7 +41,7 @@ st.markdown("""
             border-right: 1px solid #E5E7EB;
         }
     </style>
-""", unsafe_type_html=True)
+""", unsafe_allow_html=True)
 
 # 3. เชื่อมต่อฐานข้อมูล Google Sheet มาสเตอร์ไฟล์
 SHEET_ID = "14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o"
@@ -83,7 +83,7 @@ if df is not None:
     st.markdown("<p style='color: #6B7280; font-size: 14px;'>ข้อมูลเชื่อมโยงแบบเรียลไทม์จากระบบ Google Sheet Master File</p>", unsafe_type_html=True)
     st.markdown("<hr style='margin-top: 10px; margin-bottom: 25px;'>", unsafe_type_html=True)
 
-    # 📈 ส่วนที่ 1: การ์ดสรุปผลงานระดับบริหาร (KPI Cards) - อิงสไตล์กล่องสรุปใน UX ดีไซน์
+    # 📈 ส่วนที่ 1: การ์ดสรุปผลงานระดับบริหาร (KPI Cards)
     kpi1, kpi2, kpi3 = st.columns(3)
     with kpi1:
         total_sum = filtered_df['ผลงาน/ยอดขาย (Value)'].sum()
@@ -92,7 +92,7 @@ if df is not None:
                 <div class="kpi-title">ผลรวมยอดขาย/ผลงานทั้งหมด</div>
                 <div class="kpi-value">{total_sum:,.0f}</div>
             </div>
-        """, unsafe_type_html=True)
+        """, unsafe_allow_html=True)
     with kpi2:
         dept_count = filtered_df['แผนก (Department)'].nunique()
         st.markdown(f"""
@@ -100,7 +100,7 @@ if df is not None:
                 <div class="kpi-title">จำนวนแผนกที่กำลังดำเนินงาน</div>
                 <div class="kpi-value">{dept_count} แผนก</div>
             </div>
-        """, unsafe_type_html=True)
+        """, unsafe_allow_html=True)
     with kpi3:
         month_count = filtered_df['month'].nunique()
         st.markdown(f"""
@@ -108,12 +108,11 @@ if df is not None:
                 <div class="kpi-title">จำนวนเดือนที่เลือกแสดงผล</div>
                 <div class="kpi-value">{month_count} เดือน</div>
             </div>
-        """, unsafe_type_html=True)
+        """, unsafe_allow_html=True)
 
     # 📊 ส่วนที่ 2: การพล็อตกราฟเปรียบเทียบ (Charts Area)
     st.markdown(f"<h4 style='font-weight: 600; color: #374151; margin-top: 15px;'>📈 กราฟแสดงผลในโหมด: {filter_mode}</h4>", unsafe_type_html=True)
     
-    # กำหนดชุดสีแนวโมเดิร์นพาสเทลยอดนิยมใน Figma (เช่น สีคราม, สีเขียวมินต์, สีส้มอ่อน, สีชมพู, สีฟ้า)
     modern_colors = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#3B82F6', '#8B5CF6']
     
     fig = px.bar(
@@ -124,10 +123,9 @@ if df is not None:
         barmode="group",
         color_discrete_sequence=modern_colors,
         labels={'month': 'เดือน', 'แผนก (Department)': 'แผนก', 'ผลงาน/ยอดขาย (Value)': 'จำนวน'},
-        text_auto='.0f' # แสดงตัวเลขจำนวนเต็มบนแท่งกราฟชัดๆ แบบงานดีไซน์
+        text_auto='.0f'
     )
     
-    # ปรับแต่งความโปร่งและเส้นตารางให้ดูสะอาดตา สะอาดใจแบบมินิมอล
     fig.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
@@ -136,7 +134,7 @@ if df is not None:
         margin=dict(l=20, r=20, t=20, b=20),
         font=dict(family='Sarabun', size=13)
     )
-    fig.update_yaxes(showgrid=True, gridcolor='#E5E7EB') # โชว์เส้นตารางจางๆ 
+    fig.update_yaxes(showgrid=True, gridcolor='#E5E7EB')
     
     st.plotly_chart(fig, use_container_width=True)
 
@@ -146,4 +144,3 @@ if df is not None:
         st.dataframe(df, use_container_width=True)
 else:
     st.info("💡 คำแนะนำ: โปรดตรวจสอบลิงก์และสิทธิ์การแชร์ของ Google Sheet อีกครั้ง")
-
