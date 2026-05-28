@@ -40,7 +40,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🔗 3. ใส่ลิงก์ที่ได้จากปุ่ม "เผยแพร่ไปยังเว็บ" (Publish to web) ของคุณที่นี่
-url = "https://google.com"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณ
+url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTeRQBZil1P--FNOmDZYT1sKePSfWgjynp9VvVY-ttHHJ93UkHxHPbf0iG0196eZ587WmOdz70QDMST/pubhtml"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณ
 
 @st.cache_data(ttl=1) 
 def load_data():
