@@ -5,17 +5,19 @@ import plotly.express as px
 # 1. ตั้งค่าหน้าเว็บให้เป็นแบบ Wide โทนมืดตั้งต้น
 st.set_page_config(page_title="Executive Dashboard", layout="wide")
 
-# ลิงก์ข้อมูลดิบจาก Google Sheet ของคุณโดยตรง
-url = "https://google.com"
+# ลิงก์ข้อมูลดิบจาก Google Sheet ของคุณโดยตรงตามคำสั่ง
+url = "https://docs.google.com/spreadsheets/d/14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o/edit?gid=0#gid=0"
 
 @st.cache_data(ttl=1)
 def load_data():
     try:
-        # อ่านข้อมูลสดและระบุรหัสภาษาเพื่อป้องกันสระภาษาไทยเพี้ยน
+        # อ่านข้อมูลจากลิงก์ Google Sheet และระบุรหัสภาษาสำหรับภาษาไทยและอังกฤษ
         data = pd.read_csv(url, encoding='utf-8')
         data.dropna(how='all', inplace=True)
-        # ลบช่องว่างส่วนเกินที่ชื่อคอลัมน์ออกทั้งหมด
-        data.columns = data.columns.str.strip()
+        
+        # 🛠️ แก้ไขจุดสำคัญ: ลบช่องว่างและบังคับให้ชื่อคอลัมน์ทั้งหมดเป็นตัวพิมพ์เล็กออโต้
+        # เพื่อให้ 'month' และชื่อแผนกจับคู่กับโค้ดด้านล่างได้อย่างแม่นยำ 100%
+        data.columns = data.columns.str.strip().str.lower()
         return data
     except Exception as e:
         st.error(f"ไม่สามารถเชื่อมต่อ Google Sheet ได้: {e}")
@@ -24,11 +26,9 @@ def load_data():
 df = load_data()
 
 if df is not None and not df.empty:
-    # 🛠️ แก้ไขจุดสำคัญ: ดึงชื่อคอลัมน์แรกสุดมาทำเป็นแกนเดือนอัตโนมัติ ไม่ว่าใน Sheet จะตั้งชื่อว่าอะไร
-    col_month = df.columns[0]
-    
-    # 🛠️ ดึงชื่อคอลัมน์แผนกที่เหลือทั้งหมดที่มีใน Google Sheet ของคุณมาใช้โดยอัตโนมัติ
-    departments = [col for col in df.columns if col != col_month and not col.startswith('Unnamed')]
+    # กำหนดตัวแปรชื่อคอลลัมน์ (เป็นตัวพิมพ์เล็กทั้งหมดตามที่ระบุในคำสั่งแปลงด้านบน)
+    col_month = 'month'
+    departments = ['engineering', 'sales', 'marketing', 'hr', 'operations', 'it']
     
     try:
         # แปลงโครงสร้างข้อมูลตารางดิบให้เป็นแนวตั้งเพื่อเตรียมพล็อตกราฟ (Wide to Long)
@@ -87,4 +87,3 @@ if df is not None and not df.empty:
         st.error(f"เกิดข้อผิดพลาดในการประมวลผลตารางข้อมูล: {ex}")
 else:
     st.info("💡 คำแนะนำ: ไม่พบข้อมูลในแผ่นงาน หรือโปรดตรวจสอบสิทธิ์การแชร์ของ Google Sheet อีกครั้ง")
-
