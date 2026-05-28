@@ -42,7 +42,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🔗 3. ลิงก์จาก Google Sheet (พ่นข้อมูลออกมาเป็น CSV อัตโนมัติ)
-url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTeRQBZil1P--FNOmDZYT1sKePSfWgjynp9VvVY-ttHHJ93UkHxHPbf0iG0196eZ587WmOdz70QDMST/pubhtml"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณที่นี่
+url = "https://google.com"  # <--- เปลี่ยนเป็นลิงก์ Google Sheet ของคุณที่นี่
 
 @st.cache_data(ttl=1) 
 def load_data():
@@ -71,4 +71,122 @@ if df is not None and not df.empty:
         st.title("📊 ระบบเปรียบเทียบข้อมูลอัจฉริยะ (Universal Dashboard)")
         st.markdown("---")
         
-        #
+        # 🛠️ 4. โหมดควบคุมแถวบนสุด: เลือกมุมมองกราฟที่เหมาะกับการตัดสินใจ
+        chart_type = st.radio(
+            "📈 เลือกรูปแบบการเปรียบเทียบข้อมูลที่ต้องการดู:",
+            ["ดูอันดับความสูง-ต่ำ (แท่งแนวนอน)", "ดูแนวโน้มการเติบโตรายเดือน (กราฟเส้น)", "ดูสัดส่วนและยอดรวมบริษัท (แท่งสะสม)"],
+            horizontal=True
+        )
+        
+        st.markdown("---")
+        
+        # ตัวเลือกช่วยชีวิตสำหรับ 40 แผนก
+        select_mode = st.radio(
+            "💡 โหมดการเลือกแผนก:",
+            ["แสดงทุกแผนกพร้อมกัน (ทั้งหมด)", "เลือกติ๊กเฉพาะแผนกที่ต้องการดู"],
+            horizontal=True
+        )
+        
+        # แยกแถวตัวกรองให้กดง่ายขึ้นบน Tablet/Mobile
+        col_f1, col_f2 = st.columns([1, 1])
+        
+        with col_f1:
+            all_months = df[col_month].dropna().astype(str).unique().tolist()
+            selected_months = st.multiselect(
+                "📅 เลือกเดือนที่ต้องการดู:", 
+                options=all_months, 
+                default=all_months
+            )
+            
+        with col_f2:
+            if select_mode == "แสดงทุกแผนกพร้อมกัน (ทั้งหมด)":
+                selected_depts = departments
+                st.info(f"✨ ระบบกำลังแสดงผลทั้งหมด {len(departments)} แผนก")
+            else:
+                # ถ้าผู้ใช้เลือกติ๊กเอง ตั้งต้นให้โชว์แค่ 5 แผนกแรกเพื่อไม่ให้กราฟระเบิดในครั้งแรก
+                default_show = departments[:5] if len(departments) >= 5 else departments
+                selected_depts = st.multiselect(
+                    "🏢 ติ๊กเลือกแผนก (พิมพ์ค้นหาได้):", 
+                    options=departments,
+                    default=default_show
+                )
+                
+        # ประมวลผลตัวกรองข้อมูลตามที่ผู้ใช้เลือก
+        filtered_df = df_melted[
+            (df_melted[col_month].astype(str).isin(selected_months)) & 
+            (df_melted['Department'].isin(selected_depts))
+        ]
+        
+        st.markdown("---")
+        
+        # 📈 5. ส่วนสร้างการพล็อตกราฟแบบ Dynamic เปลี่ยนรูปร่างตามปุ่มสั่งการ
+        modern_colors = ['#6366F1', '#10B981', '#F59E0B', '#F43F5E', '#06B6D4', '#A855F7', '#EC4899', '#38BDF8', '#F472B6']
+        
+        if chart_type == "ดูอันดับความสูง-ต่ำ (แท่งแนวนอน)":
+            # 💡 แก้ไขจุดบั๊ก: ขยายความสูงตามจำนวนแผนกที่เลือกเพื่อให้แถวเว้นระยะสวยงาม
+            dynamic_height = max(450, len(selected_depts) * 45)
+            
+            fig = px.bar(
+                filtered_df, 
+                x='Value',       # 📊 แกน X คือจำนวนตัวเลขตัวเลข (ความยาวแท่ง)
+                y='Department',  # 🏢 แกน Y คือชื่อแผนก (ทำให้ยอมแยกบรรทัดดิ่งลงข้างล่าง)
+                color=col_month,
+                barmode="group", 
+                color_discrete_sequence=modern_colors,
+                labels={col_month: 'เดือน', 'Department': 'แผนก', 'Value': 'จำนวน'},
+                text_auto='.0f', 
+                template="plotly_dark", 
+                orientation='h'  # บังคับเปิดใช้งานแนวนอน
+            )
+            fig.update_yaxes(categoryorder='total ascending') # เรียงเอาแผนกยอดสูงสุดไว้บนสุดเสมอ
+            
+        elif chart_type == "ดูแนวโน้มการเติบโตรายเดือน (กราฟเส้น)":
+            dynamic_height = 550
+            fig = px.line(
+                filtered_df, x=col_month, y='Value', color='Department',
+                color_discrete_sequence=modern_colors,
+                labels={col_month: 'เดือน', 'Department': 'แผนก', 'Value': 'จำนวน'},
+                markers=True, template="plotly_dark"
+            )
+            fig.update_traces(line=dict(width=3), marker=dict(size=8))
+            
+        else: # ดูสัดส่วนและยอดรวมบริษัท (แท่งสะสม)
+            dynamic_height = 550
+            fig = px.bar(
+                filtered_df, x=col_month, y='Value', color='Department',
+                barmode="relative", color_discrete_sequence=modern_colors,
+                labels={col_month: 'เดือน', 'Department': 'แผนก', 'Value': 'จำนวน'},
+                text_auto='.0f', template="plotly_dark"
+            )
+        
+        # ปรับรายละเอียด Layout ส่วนกลางให้สวยงามสมบูรณ์บนทุกหน้าจอ
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=15, r=15, t=15, b=10),
+            font=dict(family='Sarabun', size=12, color='#F8FAFC'),
+            height=dynamic_height,
+            
+            # จัดให้คำอธิบายรายเดือน/แผนก ย้ายไปอยู่ด้านล่างสุดของกราฟเพื่อเพิ่มพื้นที่ใช้งาน
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.2,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=11),
+                title=None
+            )
+        )
+        
+        # ปรับแต่งสีและฟอนต์ของแกนประมวลผลให้อ่านชัดเจนในโหมด Dark Mode
+        fig.update_xaxes(showgrid=True, gridcolor='#334151', tickfont=dict(color='#94A3B8'))
+        fig.update_yaxes(showgrid=True, gridcolor='#334151', tickfont=dict(color='#F8FAFC'))
+        
+        # แสดงผลกราฟลงบนหน้าเว็บจริง (พร้อมสั่งซ่อนแถบเครื่องมือเครื่องไม้ของ Plotly เพื่อให้จอมือถือสะอาดตา)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            
+    except Exception as ex:
+        st.error(f"เกิดข้อผิดพลาดในการประมวลผลข้อมูล: {ex}")
+else:
+    st.info("💡 คำแนะนำ: ไม่พบข้อมูลในแผ่นงาน หรือโปรดตรวจสอบว่าใส่ลิงก์ Google Sheet ถูกต้องแล้ว")
