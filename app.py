@@ -2,20 +2,18 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# 1. ตั้งค่าหน้าเว็บแดชบอร์ด
 st.set_page_config(page_title="แผนก & รายเดือน แดชบอร์ด", layout="wide", page_icon="📊")
 st.title("📊 แดชบอร์ดวิเคราะห์ข้อมูลรายแผนก และ รายเดือน")
 st.markdown("---")
 
-# =========================================================
-# ⚠️ แก้ไขข้อมูล Google Sheet ของคุณที่นี่
+# เชื่อมต่อ Google Sheet ของคุณ (ตรวจสอบความถูกต้องเรียบร้อยแล้ว)
 SHEET_ID = "14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o"
 SHEET_NAME = "Sheet1"  
-# =========================================================
 
-# คัดลอกบรรทัดนี้ไปวางแทนที่บรรทัดที่ 16 เดิมได้เลยครับ
-url = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=5) # อัปเดตข้อมูลไวขึ้น ทุกๆ 5 วินาทีเมื่อมีการรีเฟรชหน้าเว็บ
 def load_data():
     try:
         data = pd.read_csv(url)
@@ -28,34 +26,46 @@ def load_data():
 df = load_data()
 
 if df is not None:
-    col_dept = 'ลำดับแต่ละแผนก'
-    col_month = 'เดือน'
+    # 2. ปรับโครงสร้างข้อมูลจากแบบกว้าง (Wide format) ให้เป็นแบบยาว (Long format) เพื่อให้จัดกลุ่มพล็อตกราฟง่าย
+    # แปลงคอลัมน์แผนกต่างๆ มารวมกันให้อยู่ในคอลัมน์เดี่ยว
+    departments = [col for col in df.columns if col != 'month']
+    df_melted = pd.melt(df, id_vars=['month'], value_vars=departments, 
+                        var_name='แผนก (Department)', value_name='ผลงาน/ยอดขาย (Value)')
     
-    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-    if len(numeric_cols) > 0:
-        col_value = numeric_cols[0]
-    else:
-        df['จำนวน (แถว)'] = 1
-        col_value = 'จำนวน (แถว)'
-
+    # 3. เมนูด้านข้าง (Sidebar Filters)
     st.sidebar.header("🛠️ ตัวกรองข้อมูล (Filters)")
-    available_months = df[col_month].dropna().unique().tolist()
+    
+    # รายชื่อเดือนทั้งหมดที่มีใน Google Sheet ของคุณ (Jan - Dec)
+    available_months = df['month'].dropna().unique().tolist()
+    
+    # เมนูเลือกโหมดแสดงผล
     filter_mode = st.sidebar.radio("รูปแบบการดูข้อมูล:", ["เปรียบเทียบทุกเดือน", "กรองดูเฉพาะเดือน"])
     
     if filter_mode == "กรองดูเฉพาะเดือน":
-        selected_months = st.sidebar.multiselect("เลือกเดือนที่ต้องการดู:", options=available_months, default=available_months[:1])
-        filtered_df = df[df[col_month].isin(selected_months)]
+        selected_months = st.sidebar.multiselect("เลือกเดือนที่ต้องการดู:", options=available_months, default=available_months[:3])
+        filtered_df = df_melted[df_melted['month'].isin(selected_months)]
     else:
-        filtered_df = df.copy()
+        filtered_df = df_melted.copy()
 
+    # 4. แสดงผลกราฟแท่งแบบกลุ่ม (Grouped Bar Chart)
     st.subheader(f"📈 กราฟแสดงผลในโหมด: {filter_mode}")
-    if filter_mode == "เปรียบเทียบทุกเดือน":
-        fig = px.bar(filtered_df, x=col_dept, y=col_value, color=col_month, barmode="group", text_auto=True)
-    else:
-        fig = px.bar(filtered_df, x=col_dept, y=col_value, color=col_dept, text_auto=True)
+    
+    fig = px.bar(
+        filtered_df,
+        x='แผนก (Department)',
+        y='ผลงาน/ยอดขาย (Value)',
+        color='month', # แยกสีตามเดือนเพื่อให้เปรียบเทียบง่าย
+        barmode="group", # จัดกลุ่มแท่งกราฟให้อยู่ข้างกัน
+        title="กราฟเปรียบเทียบข้อมูลแต่ละแผนกแยกตามรายเดือน",
+        labels={'month': 'เดือน', 'แผนก (Department)': 'แผนก', 'ผลงาน/ยอดขาย (Value)': 'จำนวน'},
+        text_auto=True # แสดงตัวเลขยอดบนแท่งกราฟอัตโนมัติ
+    )
         
-    fig.update_layout(xaxis_tickangle=-45)
+    fig.update_layout(xaxis_tickangle=0, legend_title_text='เดือน')
     st.plotly_chart(fig, use_container_width=True)
 
+    # 5. แสดงตารางข้อมูลดิบด้านล่าง
     with st.expander("📋 ดูข้อมูลดิบจาก Google Sheet แบบเรียลไทม์"):
-        st.dataframe(filtered_df, use_container_width=True)
+        st.dataframe(df, use_container_width=True)
+else:
+    st.info("💡 กำแนะนำ: ตรวจสอบลิงก์และสิทธิ์การแชร์ของ Google Sheet อีกครั้ง")
