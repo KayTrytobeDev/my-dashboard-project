@@ -12,6 +12,7 @@ SHEET_ID = "14u71fDUsnE9uMl5G1PieIWaxWmeqAT1YRTOnzSbtr4o"
 SHEET_NAME = "Sheet1"  
 # =========================================================
 
+# คัดลอกบรรทัดนี้ไปวางแทนที่บรรทัดที่ 16 เดิมได้เลยครับ
 url = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
 
 @st.cache_data(ttl=10)
